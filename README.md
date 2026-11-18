@@ -11,11 +11,12 @@ A tiny native macOS menu bar app that shows the live status of the services you 
 ## Install
 
 ```bash
+brew trust --cask robbertvancaem/tap/statuspage-menu-bar
 brew install robbertvancaem/tap/statuspage-menu-bar
 open "/Applications/Statuspage Menu Bar.app"
 ```
 
-No Apple Developer cert, no `xattr` dance — the cask strips the quarantine flag for you on install. Coming from `claude-status-bar`? `brew upgrade` migrates you to the renamed cask.
+Homebrew refuses to load casks from third-party taps until you trust them, hence the `brew trust` line (once per machine). No Apple Developer cert, no `xattr` dance — the cask strips the quarantine flag for you on install. Coming from `claude-status-bar`? `brew upgrade` migrates you to the renamed cask.
 
 ### Updating
 
