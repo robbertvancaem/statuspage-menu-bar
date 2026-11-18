@@ -2,7 +2,7 @@ import SwiftUI
 import UserNotifications
 
 @main
-struct ClaudeStatusBarApp: App {
+struct StatuspageMenuBarApp: App {
     @StateObject private var model = StatusModel()
 
     init() {
@@ -23,5 +23,9 @@ struct ClaudeStatusBarApp: App {
             }
         }
         .menuBarExtraStyle(.window)
+
+        Settings {
+            SettingsView(model: model)
+        }
     }
 }

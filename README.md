@@ -1,72 +1,69 @@
-# Claude Status Bar
+# Statuspage Menu Bar
 
-A tiny native macOS menu bar app that shows the live status of [status.claude.com](https://status.claude.com) at a glance. Faster than wondering whether *it's me or it's Claude* and then opening a browser tab.
+A tiny native macOS menu bar app that shows the live status of the services you depend on — Claude, Kinsta, GitHub, or any status page powered by Atlassian Statuspage — at a glance. Faster than wondering whether *it's me or it's them*, and no more digging through your inbox to see if an incident has been resolved.
 
 [![macOS](https://img.shields.io/badge/macOS-14%2B-blue)](#requirements)
 [![Swift](https://img.shields.io/badge/Swift-5.9-orange)](#)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![GitHub Release](https://img.shields.io/github/v/release/robbertvancaem/claude-status-bar?label=release)](https://github.com/robbertvancaem/claude-status-bar/releases)
-[![Downloads](https://img.shields.io/github/downloads/robbertvancaem/claude-status-bar/total.svg?label=downloads)](https://github.com/robbertvancaem/claude-status-bar/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/robbertvancaem/statuspage-menu-bar?label=release)](https://github.com/robbertvancaem/statuspage-menu-bar/releases)
+[![Downloads](https://img.shields.io/github/downloads/robbertvancaem/statuspage-menu-bar/total.svg?label=downloads)](https://github.com/robbertvancaem/statuspage-menu-bar/releases)
 
 ## Install
 
-```bash
-brew install robbertvancaem/tap/claude-status-bar
-open "/Applications/Claude Status Bar.app"
-```
-
-That's it. No Apple Developer cert, no `xattr` dance — the cask strips the quarantine flag for you on install.
-
-To launch on login: drag `/Applications/Claude Status Bar.app` into **System Settings → General → Login Items**.
-
-### Updating
+Build from source:
 
 ```bash
-brew upgrade --cask claude-status-bar
-```
-
-## What it does
-
-- Polls `status.claude.com` every 10 seconds.
-- Shows a single SF Symbol (`sparkles`) in the menu bar:
-  - **Operational** — rendered as a template icon, adopting the macOS menu bar theme (white in dark mode, black in light mode). Blends in like a native icon when there's nothing to worry about.
-  - **Minor / Major / Critical** — colored sparkle (yellow / orange / red) at 50% opacity, drawing just enough attention without being aggressive.
-- Click the icon for a per-component breakdown (claude.ai, Console, API, Claude Code, Cowork, Government).
-- Optional native macOS notification on state transitions (e.g. operational → minor). Toggleable from the dropdown.
-
-No usage tracking, no Claude Code session monitoring, no settings UI to wade through. Just up/down.
-
-## Build from source
-
-If you'd rather build it yourself (no Homebrew dependency):
-
-```bash
-git clone https://github.com/robbertvancaem/claude-status-bar.git
-cd claude-status-bar
+git clone https://github.com/robbertvancaem/statuspage-menu-bar.git
+cd statuspage-menu-bar
 ./build.sh
-open "/Applications/Claude Status Bar.app"
+open "/Applications/Statuspage Menu Bar.app"
 ```
 
 Needs Xcode Command Line Tools (`xcode-select --install`) and macOS 14+. The build script compiles a release binary via Swift Package Manager and drops the `.app` bundle into `/Applications/`. Re-running `build.sh` updates the binary in place (ad-hoc signed).
 
+> The Homebrew cask (`brew install robbertvancaem/tap/claude-status-bar`) still installs the previous, Claude-only release.
+
+To launch on login: drag `/Applications/Statuspage Menu Bar.app` into **System Settings → General → Login Items**.
+
+## What it does
+
+- Polls every enabled status page every 10 seconds.
+- Shows a single icon in the menu bar, reflecting the **worst** status across all enabled services:
+  - **Operational** — the symbol of your first service (`sparkles` for Claude), rendered as a template icon that adopts the macOS menu bar theme. Blends in like a native icon when there's nothing to worry about.
+  - **Maintenance / Minor / Major / Critical** — the symbol of the affected service (e.g. `server.rack` for Kinsta), colored blue / yellow / orange / red at 50% opacity.
+- Click the icon for a section per service: overall status, unresolved incidents (click to open), and components. Services with more than 8 components only list the affected ones.
+- Optional native macOS notification on state transitions per service (e.g. "Kinsta: Minor issue").
+
+## Services
+
+Open **Settings…** from the dropdown to pick which status pages to follow.
+
+Built-in presets (Claude is enabled by default):
+
+| Service | Status page |
+|---------|-------------|
+| Claude | https://status.claude.com |
+| Kinsta | https://status.kinsta.com |
+| GitHub | https://www.githubstatus.com |
+| OpenAI | https://status.openai.com |
+| Cloudflare | https://www.cloudflarestatus.com |
+| Vercel | https://www.vercel-status.com |
+| DigitalOcean | https://status.digitalocean.com |
+
+You can add any other status page by URL, as long as it runs on Atlassian Statuspage (it exposes `/api/v2/summary.json`). The app validates the URL and takes the service name from the page.
+
 ## Architecture
 
-A single-file SwiftUI `MenuBarExtra` app:
+A small SwiftUI `MenuBarExtra` app:
 
 | File | Purpose |
 |------|---------|
-| `Sources/App.swift` | Entry point + menu bar icon |
-| `Sources/StatusModel.swift` | Polls Statuspage v2 endpoints, decodes, holds state |
-| `Sources/StatusViews.swift` | Dropdown menu content |
+| `Sources/App.swift` | Entry point, menu bar icon, Settings scene |
+| `Sources/StatusModel.swift` | Service config + presets, polls Statuspage v2 summaries, aggregates state |
+| `Sources/StatusViews.swift` | Dropdown menu and Settings window |
 | `build.sh` | Build & install (Swift Package Manager → `.app` bundle) |
 
-The Statuspage v2 API (`/api/v2/status.json` + `/api/v2/components.json`) is public and unauthenticated, so the app makes plain `URLSession` requests every 10 seconds and parses with `Codable`.
-
-## Configuration
-
-There isn't really any. The poll interval is hard-coded to 10 seconds — fast enough to catch a status change before you finish swearing at your terminal, slow enough that `status.claude.com` won't blink.
-
-The only toggle exposed is **Notify on status changes**, persisted in `UserDefaults`.
+The Statuspage v2 API (`/api/v2/summary.json`) is public and unauthenticated, so the app makes plain `URLSession` requests and parses with `Codable`. Enabled services and the notification toggle are persisted in `UserDefaults`.
 
 ## Requirements
 
@@ -76,6 +73,6 @@ macOS 14 (Sonoma) or later.
 
 MIT — see [LICENSE](LICENSE).
 
-## Not affiliated with Anthropic
+## Not affiliated
 
-This is an unofficial tool. "Claude" and "Anthropic" are trademarks of Anthropic. The app only reads the public status page that Anthropic publishes for everyone.
+This is an unofficial tool, not affiliated with Anthropic, Kinsta, Atlassian or any of the listed services. All trademarks belong to their respective owners. The app only reads public status pages.

@@ -2,11 +2,11 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClaudeStatusBar",
+    name: "StatuspageMenuBar",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "ClaudeStatusBar",
+            name: "StatuspageMenuBar",
             path: "Sources"
         )
     ]

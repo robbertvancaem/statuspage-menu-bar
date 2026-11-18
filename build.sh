@@ -2,15 +2,15 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_NAME="Claude Status Bar"
-BUNDLE_ID="com.robbertvancaem.claude-status-bar"
+APP_NAME="Statuspage Menu Bar"
+BUNDLE_ID="com.robbertvancaem.statuspage-menu-bar"
 APP_DIR="/Applications/${APP_NAME}.app"
 
 echo "Building..."
 cd "$SCRIPT_DIR"
 swift build -c release 2>&1
 
-BINARY="$(swift build -c release --show-bin-path)/ClaudeStatusBar"
+BINARY="$(swift build -c release --show-bin-path)/StatuspageMenuBar"
 
 if [ ! -d "$APP_DIR" ]; then
     echo "Creating app bundle..."
@@ -23,7 +23,7 @@ if [ ! -d "$APP_DIR" ]; then
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>ClaudeStatusBar</string>
+    <string>StatuspageMenuBar</string>
     <key>CFBundleIdentifier</key>
     <string>${BUNDLE_ID}</string>
     <key>CFBundleName</key>
@@ -45,7 +45,7 @@ if [ ! -d "$APP_DIR" ]; then
 PLIST
 fi
 
-cp "$BINARY" "$APP_DIR/Contents/MacOS/ClaudeStatusBar"
+cp "$BINARY" "$APP_DIR/Contents/MacOS/StatuspageMenuBar"
 
 echo "Re-signing bundle..."
 codesign --force --sign - "$APP_DIR"
