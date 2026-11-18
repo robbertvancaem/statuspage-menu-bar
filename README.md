@@ -10,7 +10,20 @@ A tiny native macOS menu bar app that shows the live status of the services you 
 
 ## Install
 
-Build from source:
+```bash
+brew install robbertvancaem/tap/statuspage-menu-bar
+open "/Applications/Statuspage Menu Bar.app"
+```
+
+No Apple Developer cert, no `xattr` dance — the cask strips the quarantine flag for you on install. Coming from `claude-status-bar`? `brew upgrade` migrates you to the renamed cask.
+
+### Updating
+
+```bash
+brew upgrade --cask statuspage-menu-bar
+```
+
+### Build from source
 
 ```bash
 git clone https://github.com/robbertvancaem/statuspage-menu-bar.git
@@ -19,9 +32,7 @@ cd statuspage-menu-bar
 open "/Applications/Statuspage Menu Bar.app"
 ```
 
-Needs Xcode Command Line Tools (`xcode-select --install`) and macOS 14+. The build script compiles a release binary via Swift Package Manager and drops the `.app` bundle into `/Applications/`. Re-running `build.sh` updates the binary in place (ad-hoc signed).
-
-> The Homebrew cask (`brew install robbertvancaem/tap/claude-status-bar`) still installs the previous, Claude-only release.
+Needs Xcode Command Line Tools (`xcode-select --install`) and macOS 14+. The build script compiles a universal (arm64 + x86_64) release binary via Swift Package Manager and drops the `.app` bundle into `/Applications/`. Re-running `build.sh` updates the binary in place (ad-hoc signed).
 
 To launch on login: drag `/Applications/Statuspage Menu Bar.app` into **System Settings → General → Login Items**.
 
