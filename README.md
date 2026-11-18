@@ -1,6 +1,6 @@
 # Statuspage Menu Bar
 
-A tiny native macOS menu bar app that shows the live status of the services you depend on — Claude, Kinsta, GitHub, or any status page powered by Atlassian Statuspage — at a glance. Faster than wondering whether *it's me or it's them*, and no more digging through your inbox to see if an incident has been resolved.
+A tiny native macOS menu bar app that shows the live status of the services you depend on — Claude, Kinsta, GitHub, GitLab, or any status page powered by Atlassian Statuspage — at a glance. Faster than wondering whether *it's me or it's them*, and no more digging through your inbox to see if an incident has been resolved.
 
 [![macOS](https://img.shields.io/badge/macOS-14%2B-blue)](#requirements)
 [![Swift](https://img.shields.io/badge/Swift-5.9-orange)](#)
@@ -61,6 +61,7 @@ Built-in presets (Claude is enabled by default):
 | Cloudflare | https://www.cloudflarestatus.com |
 | Vercel | https://www.vercel-status.com |
 | DigitalOcean | https://status.digitalocean.com |
+| GitLab | https://status.gitlab.com (via the status.io API) |
 
 You can add any other status page by URL, as long as it runs on Atlassian Statuspage (it exposes `/api/v2/summary.json`). The app validates the URL and takes the service name from the page.
 
@@ -75,7 +76,7 @@ A small SwiftUI `MenuBarExtra` app:
 | `Sources/StatusViews.swift` | Dropdown menu and Settings window |
 | `build.sh` | Build & install (Swift Package Manager → `.app` bundle) |
 
-The Statuspage v2 API (`/api/v2/summary.json`) is public and unauthenticated, so the app makes plain `URLSession` requests and parses with `Codable`. Enabled services and the notification toggle are persisted in `UserDefaults`.
+The Statuspage v2 API (`/api/v2/summary.json`) and the status.io API (GitLab) are public and unauthenticated, so the app makes plain `URLSession` requests and parses with `Codable`. Enabled services and the notification toggle are persisted in `UserDefaults`.
 
 ## Requirements
 

@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_NAME="Statuspage Menu Bar"
 BUNDLE_ID="com.robbertvancaem.statuspage-menu-bar"
 APP_DIR="/Applications/${APP_NAME}.app"
-VERSION="0.2.0"
+VERSION="0.3.0"
 
 echo "Building..."
 cd "$SCRIPT_DIR"

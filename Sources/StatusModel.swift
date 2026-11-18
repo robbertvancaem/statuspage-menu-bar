@@ -12,6 +12,8 @@ struct Service: Codable, Identifiable, Hashable {
     var symbol: String
     var enabled: Bool
     var isPreset: Bool = false
+    /// Set for pages hosted on status.io instead of Atlassian Statuspage.
+    var statusioID: String? = nil
 }
 
 enum Presets {
@@ -23,10 +25,11 @@ enum Presets {
         preset("Cloudflare", "https://www.cloudflarestatus.com", "cloud"),
         preset("Vercel", "https://www.vercel-status.com", "triangle"),
         preset("DigitalOcean", "https://status.digitalocean.com", "drop"),
+        preset("GitLab", "https://status.gitlab.com", "arrow.triangle.branch", statusioID: "5b36dc6502d06804c08349f7"),
     ]
 
-    private static func preset(_ name: String, _ url: String, _ symbol: String, enabled: Bool = false) -> Service {
-        Service(id: URL(string: url)!.host!, name: name, baseURL: url, symbol: symbol, enabled: enabled, isPreset: true)
+    private static func preset(_ name: String, _ url: String, _ symbol: String, enabled: Bool = false, statusioID: String? = nil) -> Service {
+        Service(id: URL(string: url)!.host!, name: name, baseURL: url, symbol: symbol, enabled: enabled, isPreset: true, statusioID: statusioID)
     }
 }
 
@@ -54,6 +57,54 @@ struct SummaryResponse: Decodable {
     let status: Status
     let components: [Component]
     let incidents: [Incident]?
+}
+
+// MARK: - status.io API (e.g. GitLab)
+
+struct StatusIOResponse: Decodable {
+    struct Result: Decodable {
+        struct Overall: Decodable { let status: String; let status_code: Int }
+        struct Item: Decodable { let id: String; let name: String; let status: String; let status_code: Int }
+        struct Incident: Decodable { let _id: String?; let name: String? }
+        let status_overall: Overall
+        let status: [Item]
+        let incidents: [Incident]?
+    }
+    let result: Result
+
+    /// Maps status.io codes onto the Statuspage v2 vocabulary the rest of the app uses.
+    func asSummary(name: String, baseURL: String) -> SummaryResponse {
+        func indicator(_ code: Int) -> String {
+            switch code {
+            case 100: return "none"
+            case 200: return "maintenance"
+            case 300: return "minor"
+            case 400: return "major"
+            default: return "critical"
+            }
+        }
+        func componentStatus(_ code: Int) -> String {
+            switch code {
+            case 100: return "operational"
+            case 200: return "under_maintenance"
+            case 300: return "degraded_performance"
+            case 400: return "partial_outage"
+            default: return "major_outage"
+            }
+        }
+        return SummaryResponse(
+            page: .init(name: name),
+            status: .init(indicator: indicator(result.status_overall.status_code), description: result.status_overall.status),
+            components: result.status.enumerated().map { index, item in
+                .init(id: item.id, name: item.name, status: componentStatus(item.status_code),
+                      position: index, group_id: nil, only_show_if_degraded: nil)
+            },
+            incidents: (result.incidents ?? []).enumerated().map { index, incident in
+                .init(id: incident._id ?? "\(index)", name: incident.name ?? "Incident",
+                      status: "investigating", impact: nil, shortlink: baseURL)
+            }
+        )
+    }
 }
 
 struct ServiceState {
@@ -137,7 +188,7 @@ final class StatusModel: ObservableObject {
             for service in targets {
                 group.addTask {
                     do {
-                        return (service, .success(try await Self.fetchSummary(service.baseURL)))
+                        return (service, .success(try await Self.fetchSummary(for: service)))
                     } catch {
                         return (service, .failure(error))
                     }
@@ -176,15 +227,26 @@ final class StatusModel: ObservableObject {
         states[service.id] = state
     }
 
+    nonisolated private static func fetchSummary(for service: Service) async throws -> SummaryResponse {
+        guard let statusioID = service.statusioID else { return try await fetchSummary(service.baseURL) }
+        let response: StatusIOResponse = try await fetchJSON("https://api.status.io/1.0/status/\(statusioID)")
+        return response.asSummary(name: service.name, baseURL: service.baseURL)
+    }
+
     nonisolated private static func fetchSummary(_ baseURL: String) async throws -> SummaryResponse {
         guard let url = URL(string: baseURL)?.appendingPathComponent("api/v2/summary.json") else {
             throw StatusPageError.invalidURL
         }
+        return try await fetchJSON(url.absoluteString)
+    }
+
+    nonisolated private static func fetchJSON<T: Decodable>(_ urlString: String) async throws -> T {
+        guard let url = URL(string: urlString) else { throw StatusPageError.invalidURL }
         var request = URLRequest(url: url)
         request.cachePolicy = .reloadIgnoringLocalCacheData
         request.timeoutInterval = 8
         let (data, _) = try await URLSession.shared.data(for: request)
-        return try JSONDecoder().decode(SummaryResponse.self, from: data)
+        return try JSONDecoder().decode(T.self, from: data)
     }
 
     // MARK: Custom services
